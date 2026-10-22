@@ -182,7 +182,9 @@ const ICON = {
   vol: '<path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/>',
   mute: '<path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z"/><path d="M16 9.5l5 5M21 9.5l-5 5"/>',
   play: '<path d="M8 5.5v13l11-6.5z"/>',
-  lock: '<rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15.5" r=".8"/>'
+  lock: '<rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15.5" r=".8"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
+  insta: '<rect x="4" y="4" width="16" height="16" rx="5"/><circle cx="12" cy="12" r="3.8"/><circle cx="16.8" cy="7.2" r=".7"/>'
 };
 /* Ikon kategori (garis, senada dengan ikon lain). Mau pakai foto? Isi CATIMG, mis. 'Coffee': 'images/cat-coffee.jpeg' */
 const CATICON = {
@@ -445,14 +447,14 @@ function homeBody() {
   const cb = P.findIndex((p) => p.n === "Salted Caramel Cold Brew");
   const pop = popular(8);
   const fy = forYou(6);
-  return `<button class="opn ${isOpen() ? "on" : "off"}" data-info><i></i>${openNote()}<span>Info kafe ›</span></button><div class="ban"><small>COFFEE • KITCHEN • GATHER</small><h2>A Taste Above Ordinary.</h2><p>Exceptional coffee, delicious dishes, and moments worth sharing.</p><div class="acts"><button class="btn" data-go="explore">Explore Menu</button><button class="btn ghost" data-story>Our Story</button>${P[cb] && !P[cb].h ? `<button class="btn ghost" data-open="${cb}">Pilihan musim ini</button>` : ""}</div></div>
+  return `${openBar("button")}<div class="ban"><small>COFFEE • KITCHEN • GATHER</small><h2>A Taste Above Ordinary.</h2><p>Exceptional coffee, delicious dishes, and moments worth sharing.</p><div class="acts"><button class="btn" data-go="explore">Explore Menu</button><button class="btn ghost" data-story>Our Story</button>${P[cb] && !P[cb].h ? `<button class="btn ghost" data-open="${cb}">Pilihan musim ini</button>` : ""}</div></div>
   ${voucherHtml()}<h2 class="st">Kategori</h2><div class="cats">${CATS.map(([c, e]) => `<button class="cat" data-cat="${c}">${catVis(c, e)}${c}</button>`).join("")}</div>
   <h2 class="st">Produk Populer</h2><div class="hs">${pop.map((p) => vc(p, true)).join("")}</div>
   <h2 class="st">Untukmu</h2><p class="rec-note">${fy.note}</p><div class="for-you">${fy.list.map(row).join("")}</div>
   <h2 class="st">Best Seller</h2><div class="hs">${vis().filter((p) => p.b).map((p) => vc(p)).join("")}</div>
   <h2 class="st" id="about">More Than Just a Café</h2><p class="about">VELORA adalah tempat menikmati kopi yang diseduh dengan teliti, hidangan berkualitas, dan waktu berharga bersama orang terdekat.</p>
   <h2 class="st">Moments at VELORA</h2><div class="gal">${GALLERY.map(([f, c, t]) => `<figure class="im ${t ? "t" : ""}"><span class="mono" aria-hidden="true">V</span><img src="images/gallery-${f}.jpg" alt="${c} VELORA Café" loading="lazy" onerror="this.remove()"><figcaption>${c}</figcaption></figure>`).join("")}</div>
-  <h2 class="st">Visit VELORA</h2><div class="cardi"><p><b>ALAMAT</b>${CAFE.addr}</p><p><b>JAM OPERASIONAL</b>${CAFE.hours}</p><p><b>WHATSAPP</b><a href="https://wa.me/${WA}" target="_blank" rel="noopener">${CAFE.tel}</a></p><p><b>INSTAGRAM</b><a href="https://instagram.com/velora.cafe" target="_blank" rel="noopener">${CAFE.ig}</a></p></div>`;
+  <h2 class="st">Visit VELORA</h2><div class="cardi inf-c">${infoRows()}</div>`;
 }
 function home() {
   const h = new Date().getHours(), g = h < 11 ? "Selamat pagi" : h < 15 ? "Selamat siang" : h < 18 ? "Selamat sore" : "Selamat malam";
@@ -1232,11 +1234,26 @@ function saveHours() {
   if (c <= o) return (document.getElementById("kerrh").textContent = "Jam tutup harus setelah jam buka.");
   store("vc_hours", { o, c, f }); toast("Jam operasional disimpan"); render();
 }
+/* Bar status buka/tutup (beranda = tombol, sheet info = div) */
+function openBar(tag) {
+  const h = hrs(), on = isOpen();
+  const t = h.f ? "Tutup sementara" : on ? "Buka sekarang" : "Sedang tutup";
+  const s = h.f ? "Kami akan segera kembali" : on ? "Setiap hari · " + p2(h.o) + ".00 – " + p2(h.c) + ".00" : "Buka lagi pukul " + p2(h.o) + ".00";
+  const go = tag === "button" ? `<span class="hrb-go">${svg("chevron")}</span>` : "";
+  return `<${tag} class="hrb ${on ? "on" : "off"}" ${tag === "button" ? "data-info" : ""}><span class="hrb-i">${svg("clock")}</span><span class="hrb-t"><b>${t}</b><small>${s}</small></span>${go}</${tag}>`;
+}
+const infoRow = (ic, t, v) => `<div class="inf"><span class="inf-i">${svg(ic)}</span><span class="inf-t"><small>${t}</small><span class="inf-v">${v}</span></span></div>`;
+function infoRows() {
+  const h = hrs();
+  return infoRow("pin", "Alamat", CAFE.addr)
+    + infoRow("clock", "Jam operasional", `Setiap hari · ${p2(h.o)}.00 – ${p2(h.c)}.00`)
+    + infoRow("phone", "WhatsApp", `<a href="https://wa.me/${WA}" target="_blank" rel="noopener">${CAFE.tel}</a>`)
+    + infoRow("insta", "Instagram", `<a href="https://instagram.com/velora.cafe" target="_blank" rel="noopener">${CAFE.ig}</a>`);
+}
 function drawInfo() {
-  const r = (t, v) => `<div class="infr"><span><b>${t}</b><br>${v}</span></div>`;
   openSheet(`<div class="panel" role="dialog" aria-modal="true" aria-label="Info kafe"><button class="cl" data-close aria-label="Tutup">✕</button>
-  <h2 class="st" style="margin-top:56px">VELORA Café</h2><div class="opn ${isOpen() ? "on" : "off"}" style="cursor:default"><i></i>${openNote()}</div>
-  ${r("Alamat", CAFE.addr)}${r("Jam operasional", CAFE.hours)}${r("Telepon", `<a href="tel:${CAFE.tel.replace(/[^+\d]/g, "")}">${CAFE.tel}</a>`)}${r("Instagram", CAFE.ig)}</div>`);
+  <h2 class="st" style="margin-top:56px">VELORA Café</h2>${openBar("div")}
+  <div class="cardi inf-c">${infoRows()}</div></div>`);
 }
 const stars = (k, n) => [1, 2, 3, 4, 5].map((i) => `<button class="star${i <= n ? " on" : ""}" data-star="${k}|${i}" aria-label="${i} bintang">★</button>`).join("");
 const itemId = (it) => (it.r && it.r.id !== undefined ? it.r.id : P.findIndex((p) => p.n === it.n));

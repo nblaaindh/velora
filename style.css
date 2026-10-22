@@ -495,3 +495,39 @@ body.kasir-mode .tabs{display:none}
 .mph.has{border-style:solid;padding:0}
 .mph img{width:100%;max-height:200px;object-fit:cover;display:block}
 .mphx{margin-bottom:8px}
+
+/* ===== Jam buka: bar status + baris info berikon ===== */
+.hrb{display:flex;align-items:center;gap:12px;width:100%;min-height:62px;padding:11px 14px;margin-bottom:12px;border-radius:18px;background:var(--card);border:1px solid rgba(184,155,114,.4);box-shadow:var(--sh);text-align:left}
+div.hrb{cursor:default;margin:10px 0 12px}
+.hrb-i{flex:none;width:40px;height:40px;border-radius:13px;display:grid;place-items:center;background:rgba(63,138,92,.14);color:#2f7a4f}
+.hrb-i svg{width:22px;height:22px}
+.hrb.off .hrb-i{background:rgba(181,72,60,.13);color:#a23f34}
+.hrb-t{flex:1;min-width:0;display:grid;gap:1px}
+.hrb-t b{display:flex;align-items:center;gap:7px;font-size:14.5px;font-weight:600}
+.hrb-t b i{flex:none;width:8px;height:8px;border-radius:50%;background:#3f8a5c;box-shadow:0 0 0 3px rgba(63,138,92,.2)}
+.hrb.off .hrb-t b i{background:#b5483c;box-shadow:0 0 0 3px rgba(181,72,60,.2)}
+.hrb-t small{font-size:12px;color:var(--mut)}
+.hrb-go{flex:none;display:flex;align-items:center;font-size:12px;font-weight:500;color:var(--mut)}
+.hrb-go svg{width:16px;height:16px}
+.cardi.inf-c{display:block;gap:0;padding:4px 16px}
+.inf{display:grid;grid-template-columns:40px 1fr;gap:12px;align-items:center;padding:11px 0}
+.inf+.inf{border-top:1px solid rgba(89,69,56,.12)}
+.inf-i{width:40px;height:40px;border-radius:13px;background:var(--bg);color:var(--es);display:grid;place-items:center}
+.inf-i svg{width:20px;height:20px}
+.inf-t{display:grid;gap:1px;min-width:0}
+.inf-t small{font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--gold)}
+.inf-v{font-size:14px;font-weight:500}
+.inf-v a{color:var(--es);font-weight:600}
+
+/* Jam buka v2: selaras palet espresso + emas */
+.hrb{margin:16px 0 4px;gap:14px;min-height:64px;padding:12px 14px;background:var(--card);border:1px solid rgba(184,155,114,.55);box-shadow:none}
+div.hrb{margin:10px 0 12px}
+.hrb-i{position:relative;width:42px;height:42px;border-radius:14px;background:var(--es);color:var(--gold)}
+.hrb-i svg{width:22px;height:22px;stroke-width:1.8}
+.hrb-i::after{content:"";position:absolute;top:-3px;right:-3px;width:12px;height:12px;border-radius:50%;background:#4e9a6b;border:2px solid var(--card)}
+.hrb.off .hrb-i{background:var(--es);color:var(--gold)}
+.hrb.off .hrb-i::after{background:#b5483c}
+.hrb-t b{font:600 19px/1.1 var(--serif);letter-spacing:.01em;color:var(--ob)}
+.hrb-t small{font-size:12.5px;color:var(--mut)}
+.hrb-go{color:var(--gold)}
+.hrb-go svg{width:20px;height:20px}

@@ -1,6 +1,6 @@
 /* VELORA service worker: aplikasi tetap bisa dibuka saat sinyal lemah/offline.
    Naikkan angka VERSI jika ingin memaksa cache lama dibuang. */
-const VERSI = "velora-v3";
+const VERSI = "velora-v4";
 const INTI = ["./", "index.html", "style.css", "script.js", "manifest.json", "icon-192.png", "icon-512.png", "apple-touch-icon.png"];
 
 self.addEventListener("install", (e) => {
@@ -29,6 +29,6 @@ self.addEventListener("fetch", (e) => {
     return;
   }
   /* Halaman, CSS, JS: ambil yang terbaru dulu, cadangan dari cache jika offline */
-  e.respondWith(fetch(req).then((r) => simpan(req, r)).catch(() =>
+  e.respondWith(fetch(req, { cache: "no-cache" }).then((r) => simpan(req, r)).catch(() =>
     caches.match(req, { ignoreSearch: true }).then((hit) => hit || (req.mode === "navigate" ? caches.match("index.html") : Response.error()))));
 });
