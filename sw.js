@@ -1,6 +1,6 @@
 /* VELORA service worker: aplikasi tetap bisa dibuka saat sinyal lemah/offline.
    Naikkan angka VERSI jika ingin memaksa cache lama dibuang. */
-const VERSI = "velora-v4";
+const VERSI = "velora-v5";
 const INTI = ["./", "index.html", "style.css", "script.js", "manifest.json", "icon-192.png", "icon-512.png", "apple-touch-icon.png"];
 
 self.addEventListener("install", (e) => {

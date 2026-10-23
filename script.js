@@ -21,7 +21,7 @@ const DRINK = ["Coffee", "Signature Coffee", "Non-Coffee", "Tea"];
 const PAYS = ["Tunai di kasir", "QRIS", "BCA", "BRI", "Mandiri", "BNI", "Kartu debit", "GoPay", "OVO", "DANA"];
 const MERCHANT = "PT Velora Kafe Indonesia", NMID = "ID1023456789012";
 /* Data cafe: dipakai di beranda dan struk, ubah di sini saja */
-const CAFE = { addr: "Jl. Iskandar Muda No. 12, Medan", get hours() { const h = hrs(); return "Setiap hari, " + p2(h.o) + ".00 – " + p2(h.c) + ".00"; }, tel: "+62 812-3456-7890", ig: "@velora.cafe" };
+const CAFE = { addr: "Jl. Mesjid, Gg. Mesjid 1 No. 12, Tembung", get map() { return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent("Jl. Mesjid Gg. Mesjid 1 No. 12, Tembung, Percut Sei Tuan, Deli Serdang, Sumatera Utara"); }, get hours() { const h = hrs(); return "Setiap hari, " + p2(h.o) + ".00 – " + p2(h.c) + ".00"; }, tel: "+62 812-3456-7890", ig: "@velora.cafe" };
 const _pin = (k, d) => { try { return localStorage.getItem(k) || d; } catch (e) { return d; } };
 let KASIR_PIN = _pin("vc_kasir_pin", "2112");
 const KASIR_TAPS = 5;
@@ -370,7 +370,7 @@ function forYou(n) {
 }
 
 /* ===== KOMPONEN ===== */
-const img = (p, cls) => `<div class="im ${cls || ""}"><span aria-hidden="true">${p.e}</span><img src="${p.img}" alt="${p.n}" loading="lazy" onerror="this.remove()"></div>`;
+const img = (p, cls) => `<div class="im ${cls || ""}"><span aria-hidden="true">${p.e}</span><img src="${p.img}" alt="${p.n}" loading="lazy" decoding="async" onload="this.parentNode.classList.add('ld')" onerror="this.remove()"></div>`;
 const heart = (p) => `<button class="hb ${S.fav.includes(p.id) ? "on" : ""}" data-fav="${p.id}" aria-label="Favorit ${p.n}">♥</button>`;
 const plus = (p) => p.x ? '<button class="pl off" disabled aria-label="Stok habis">×</button>' : `<button class="pl" data-add="${p.id}" aria-label="Tambah ${p.n}">+</button>`;
 const foot = (p) => `<div class="ft"><b class="pr">${rp(p.p)}</b><span class="act">${heart(p)}${plus(p)}</span></div>`;
@@ -869,7 +869,7 @@ function addCart(id, o) {
   const nt = (o.nt || "").trim(), tp = (o.tp || []).slice().sort(), k = [id, o.sz, o.su, o.ic, nt, tp.join("+")].join("|"), f = S.cart.find((i) => i.k === k);
   f ? (f.q += o.q) : S.cart.push({ k, id, sz: o.sz, su: o.su, ic: o.ic, nt, tp, q: o.q });
   persist(); trackCart(id); tabs(); bump(); toast(P[id].n + " ditambahkan ke keranjang");
-  if (S.view === "home") render();
+  if (S.view === "home") { const hb = document.querySelector('.top .ib[data-go="cart"]'); if (hb) hb.innerHTML = svg("bag") + (cnt() ? `<span class="bd">${cnt()}</span>` : ""); }
 }
 function quick(id) { if (P[id].x) return toast(P[id].n + " sedang habis"); isD(P[id]) || topsFor(P[id]).length ? openDetail(id) : addCart(id, { sz: null, su: null, ic: null, tp: [], q: 1 }); }
 function chgQ(k, d) {
@@ -1245,7 +1245,7 @@ function openBar(tag) {
 const infoRow = (ic, t, v) => `<div class="inf"><span class="inf-i">${svg(ic)}</span><span class="inf-t"><small>${t}</small><span class="inf-v">${v}</span></span></div>`;
 function infoRows() {
   const h = hrs();
-  return infoRow("pin", "Alamat", CAFE.addr)
+  return infoRow("pin", "Alamat", `<a href="${CAFE.map}" target="_blank" rel="noopener">${CAFE.addr}</a>`)
     + infoRow("clock", "Jam operasional", `Setiap hari · ${p2(h.o)}.00 – ${p2(h.c)}.00`)
     + infoRow("phone", "WhatsApp", `<a href="https://wa.me/${WA}" target="_blank" rel="noopener">${CAFE.tel}</a>`)
     + infoRow("insta", "Instagram", `<a href="https://instagram.com/velora.cafe" target="_blank" rel="noopener">${CAFE.ig}</a>`);
