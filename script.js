@@ -291,19 +291,28 @@ function pinTick() {
     if (el) el.textContent = left;
   }, 250);
 }
+/* Update titik PIN saja (tanpa render ulang seluruh layar) supaya tidak berkedip di layar sentuh */
+function pinPaint() {
+  const d = document.querySelector(".pin-dots");
+  if (!d) return render();
+  d.classList.remove("shake");
+  d.setAttribute("aria-label", "PIN " + S.pin.length + " dari " + APP_PIN_LEN);
+  d.innerHTML = Array.from({ length: APP_PIN_LEN }, (_, i) => `<span class="pin-dot ${i < S.pin.length ? "on" : ""}"></span>`).join("");
+  const e = document.querySelector(".pin-err"); if (e && Date.now() >= S.pinLock) e.textContent = S.pinErr || "";
+}
 function pinPress(k) {
   if (Date.now() < S.pinLock) return;
   if (S.pin.length >= APP_PIN_LEN) return;
   S.pin += k;
   S.pinErr = "";
-  render();
+  pinPaint();
   if (S.pin.length === APP_PIN_LEN) setTimeout(pinSubmit, 150);
 }
 function pinDel() {
   if (Date.now() < S.pinLock) return;
   S.pin = S.pin.slice(0, -1);
   S.pinErr = "";
-  render();
+  pinPaint();
 }
 function pinSubmit() {
   if (S.pin === APP_PIN) {
@@ -903,6 +912,15 @@ function drawDetail(keep) {
   </div>`, keep);
 }
 
+/* Perbarui panel detail di tempat (tanpa bangun ulang) agar foto tidak berkedip */
+function patchDetail() {
+  const p = P[D.id], u = p.p + (D.sz === "Large" ? SIZE_UP : 0) + tpSum(p, D.tp), sh = $("#sheet");
+  sh.querySelectorAll("[data-tp]").forEach((b) => { const on = D.tp.includes(b.dataset.tp); b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
+  sh.querySelectorAll("[data-o]").forEach((b) => { const [k, v] = b.dataset.o.split("|"), on = D[k] === v; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
+  const q = sh.querySelector(".qty b"); if (q) q.textContent = D.q;
+  const a = sh.querySelector("[data-addd]"); if (a) a.textContent = "Tambah ke keranjang · " + rp(u * D.q);
+}
+
 /* ===== CHECKOUT ===== */
 function drawCheckout(keep) {
   const v = vch();
@@ -1376,13 +1394,13 @@ document.addEventListener("click", (e) => {
   if ((b = q("[data-cat]"))) { S.cat = b.dataset.cat; S.q = ""; return go("explore"); }
   if ((b = q("[data-chip]"))) { S.cat = b.dataset.chip; return render(); }
   if ((b = q("[data-q]"))) return chgQ(b.dataset.q, +b.dataset.d);
-  if ((b = q("[data-o]"))) { const [k, v] = b.dataset.o.split("|"); D[k] = v; return drawDetail(true); }
-  if ((b = q("[data-dq]"))) { D.q = Math.max(1, D.q + +b.dataset.dq); return drawDetail(true); }
+  if ((b = q("[data-o]"))) { const [k, v] = b.dataset.o.split("|"); D[k] = v; return patchDetail(); }
+  if ((b = q("[data-dq]"))) { D.q = Math.max(1, D.q + +b.dataset.dq); return patchDetail(); }
   if (q("[data-addd]")) { addCart(D.id, D); return closeSheet(); }
   if ((b = q("[data-type]"))) { S.type = b.dataset.type; if (!payList().includes(S.pay)) S.pay = payList()[0]; return drawCheckout(true); }
   if ((b = q("[data-chpay]"))) return drawChangePay(b.dataset.chpay);
   if ((b = q("[data-setpay]"))) { const [id, m] = b.dataset.setpay.split("|"); return changePay(id, m); }
-  if ((b = q("[data-tp]"))) { const n = b.dataset.tp; D.tp = D.tp.includes(n) ? D.tp.filter((x) => x !== n) : [...D.tp, n]; return drawDetail(true); }
+  if ((b = q("[data-tp]"))) { const n = b.dataset.tp; D.tp = D.tp.includes(n) ? D.tp.filter((x) => x !== n) : [...D.tp, n]; return patchDetail(); }
   if ((b = q("[data-pay]"))) { S.pay = b.dataset.pay; return drawCheckout(true); }
   if (q("[data-psave]")) return saveProfile();
   if (q("[data-pdel]")) return delProfile();
