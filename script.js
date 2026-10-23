@@ -2,7 +2,7 @@
 
 /* ===== KONFIGURASI ===== */
 const WA = "6281234567890";
-const BUILD = "23okt-d";
+const BUILD = "23okt-e";
 const TAX = 0.1;
 const SIZE_UP = 6000;
 /* Topping / add-on per kategori: [nama, harga] */
@@ -389,6 +389,15 @@ const row = (p) => `<article class="row${p.x ? " sold" : ""}" data-open="${p.id}
 const empty = (e, t, m, btn) => `<div class="empty"><div class="big" aria-hidden="true">${e}</div><h3>${t}</h3><p>${m}</p>${btn || ""}</div>`;
 const match = (q, cat) => vis().filter((p) => (cat === "All" || p.c === cat) && (p.n + " " + p.d + " " + p.c).toLowerCase().includes(q.trim().toLowerCase()));
 const list = (a) => a.length ? a.map(row).join("") : empty("🔎", "Menu tidak ditemukan", "Coba kata kunci lain atau pilih kategori berbeda.");
+/* Unduh foto menu pelan-pelan di latar belakang (2 sekaligus, saat browser santai) supaya saat pindah kategori fotonya sudah siap */
+function warmImages() {
+  const c = navigator.connection;
+  if (c && (c.saveData || /(^|-)(2g|3g)/.test(c.effectiveType || ""))) return;
+  const urls = [...new Set(vis().map((p) => p.img).filter(Boolean))]; let i = 0;
+  const next = () => { if (i >= urls.length) return; const im = new Image(); im.onload = im.onerror = () => setTimeout(next, 80); im.src = urls[i++]; };
+  (window.requestIdleCallback || ((f) => setTimeout(f, 1500)))(() => { next(); next(); });
+}
+window.addEventListener("load", () => setTimeout(warmImages, 1200));
 /* Daftar menu di Explore dibuat sekali; filter hanya menyembunyikan/menampilkan baris (foto tidak dimuat ulang, jadi tidak berkedip) */
 function xlHtml() {
   const ids = new Set(match(S.q, S.cat).map((p) => p.id));
