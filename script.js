@@ -2,6 +2,7 @@
 
 /* ===== KONFIGURASI ===== */
 const WA = "6281234567890";
+const BUILD = "23okt-d";
 const TAX = 0.1;
 const SIZE_UP = 6000;
 /* Topping / add-on per kategori: [nama, harga] */
@@ -379,7 +380,7 @@ function forYou(n) {
 }
 
 /* ===== KOMPONEN ===== */
-const img = (p, cls) => `<div class="im ${cls || ""}"><span aria-hidden="true">${p.e}</span><img src="${p.img}" alt="${p.n}" loading="lazy" decoding="async" onload="this.parentNode.classList.add('ld')" onerror="this.remove()"></div>`;
+const img = (p, cls) => `<div class="im ${cls || ""}"><span aria-hidden="true">${p.e}</span><img src="${p.img}" alt="${p.n}" loading="lazy" onerror="this.parentNode.classList.add('nf');this.remove()"></div>`;
 const heart = (p) => `<button class="hb ${S.fav.includes(p.id) ? "on" : ""}" data-fav="${p.id}" aria-label="Favorit ${p.n}">♥</button>`;
 const plus = (p) => p.x ? '<button class="pl off" disabled aria-label="Stok habis">×</button>' : `<button class="pl" data-add="${p.id}" aria-label="Tambah ${p.n}">+</button>`;
 const foot = (p) => `<div class="ft"><b class="pr">${rp(p.p)}</b><span class="act">${heart(p)}${plus(p)}</span></div>`;
@@ -388,6 +389,19 @@ const row = (p) => `<article class="row${p.x ? " sold" : ""}" data-open="${p.id}
 const empty = (e, t, m, btn) => `<div class="empty"><div class="big" aria-hidden="true">${e}</div><h3>${t}</h3><p>${m}</p>${btn || ""}</div>`;
 const match = (q, cat) => vis().filter((p) => (cat === "All" || p.c === cat) && (p.n + " " + p.d + " " + p.c).toLowerCase().includes(q.trim().toLowerCase()));
 const list = (a) => a.length ? a.map(row).join("") : empty("🔎", "Menu tidak ditemukan", "Coba kata kunci lain atau pilih kategori berbeda.");
+/* Daftar menu di Explore dibuat sekali; filter hanya menyembunyikan/menampilkan baris (foto tidak dimuat ulang, jadi tidak berkedip) */
+function xlHtml() {
+  const ids = new Set(match(S.q, S.cat).map((p) => p.id));
+  return vis().map((p) => (ids.has(p.id) ? row(p) : row(p).replace("<article ", "<article hidden "))).join("") +
+    `<div class="xe"${ids.size ? " hidden" : ""}>${empty("🔎", "Menu tidak ditemukan", "Coba kata kunci lain atau pilih kategori berbeda.")}</div>`;
+}
+function paintX() {
+  const xl = $("#xl"); if (!xl) return;
+  const ids = new Set(match(S.q, S.cat).map((p) => p.id));
+  xl.querySelectorAll(".row").forEach((r) => { r.hidden = !ids.has(+r.dataset.open); });
+  const xe = xl.querySelector(".xe"); if (xe) xe.hidden = ids.size > 0;
+  document.querySelectorAll(".chips [data-chip]").forEach((b) => { const on = b.dataset.chip === S.cat; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
+}
 const tpText = (i) => (i.tp && i.tp.length ? " · + " + i.tp.join(", ") : "");
 const optText0 = (i) => (isD(P[i.id]) ? `${i.sz} · gula ${i.su.toLowerCase()} · ${i.ic.toLowerCase()}` : "Siap saji") + tpText(i);
 const optText = (i) => optText0(i) + (i.nt ? " · Catatan: " + esc(i.nt) : "");
@@ -423,7 +437,8 @@ function profilePage() {
   </div>
   <h3 class="pf-h">Pintasan</h3>
   <div class="pf-list">${row("data-orders", "receipt", "Pesanan saya", "Riwayat dan status pesanan")}${row("data-myv", "tag", "Voucher saya", nVou + " voucher aktif")}${row('data-go="fav"', "heart", "Favorit", nFav + " menu tersimpan")}${row("data-info", "pin", "Info kafe", "Alamat, jam buka, dan kontak")}${row("data-lockapp", "lock", "Kunci aplikasi", "Kunci layar dengan PIN")}</div>
-  <button class="pf-del" data-pdel>${svg("trash")}Hapus data profil</button>`;
+  <button class="pf-del" data-pdel>${svg("trash")}Hapus data profil</button>
+  <p class="earn" style="text-align:center;margin-top:14px">Versi ${BUILD}</p>`;
 }
 function saveProfile() {
   const g = (i) => document.getElementById(i).value.trim(), er = (t) => { document.getElementById("perr2").textContent = t; };
@@ -474,9 +489,9 @@ function home() {
 }
 function explore() {
   return `<div class="top"><span class="logo" data-kasir-tap>EXPLORE</span></div>
-  <input class="srch" type="search" placeholder="Cari kopi, pasta, pastry…" value="${esc(S.q)}" aria-label="Cari menu" oninput="S.q=this.value;$('#xl').innerHTML=list(match(S.q,S.cat))">
+  <input class="srch" type="search" placeholder="Cari kopi, pasta, pastry…" value="${esc(S.q)}" aria-label="Cari menu" oninput="S.q=this.value;paintX()">
   <div class="chips">${["All", ...CATS.map((c) => c[0])].map((c) => `<button class="${S.cat === c ? "on" : ""}" data-chip="${c}" aria-pressed="${S.cat === c}">${c}</button>`).join("")}</div>
-  <div id="xl">${list(match(S.q, S.cat))}</div>`;
+  <div id="xl">${xlHtml()}</div>`;
 }
 function fav() {
   const a = P.filter((p) => S.fav.includes(p.id) && !p.h);
@@ -1392,7 +1407,7 @@ document.addEventListener("click", (e) => {
   if ((b = q("[data-open]"))) return openDetail(+b.dataset.open);
   if ((b = q("[data-go]"))) return go(b.dataset.go);
   if ((b = q("[data-cat]"))) { S.cat = b.dataset.cat; S.q = ""; return go("explore"); }
-  if ((b = q("[data-chip]"))) { S.cat = b.dataset.chip; return render(); }
+  if ((b = q("[data-chip]"))) { S.cat = b.dataset.chip; return paintX(); }
   if ((b = q("[data-q]"))) return chgQ(b.dataset.q, +b.dataset.d);
   if ((b = q("[data-o]"))) { const [k, v] = b.dataset.o.split("|"); D[k] = v; return patchDetail(); }
   if ((b = q("[data-dq]"))) { D.q = Math.max(1, D.q + +b.dataset.dq); return patchDetail(); }
