@@ -974,7 +974,7 @@ function place() {
   if (S.type === "Dine in" && !S.tbl) { toast("Pilih nomor meja terlebih dahulu"); return; }
   S.name = nm; store("vc_name", nm);
   S.order = { id: "VC-" + Date.now().toString().slice(-6), nm, type: S.type, hp: S.prof.hp || "", ch: isDel() ? S.ch : "", addr: isDel() ? S.addr.trim() : "", ship: shipAmt(), sd: Math.round(shipDisc()), svc: svcAmt(), vs: shipDisc() ? S.vship : "", pay: S.pay, ts: Date.now(),
-    items: S.cart.map((i) => ({ n: P[i.id].n, o: optText(i), q: i.q, p: unit(i), r: { id: i.id, sz: i.sz, su: i.su, ic: i.ic, nt: i.nt, tp: i.tp } })),
+    items: S.cart.map((i) => ({ n: P[i.id].n, o: optText(i), q: i.q, p: unit(i), cm: window.velModal ? window.velModal(i.id) : null, r: { id: i.id, sz: i.sz, su: i.su, ic: i.ic, nt: i.nt, tp: i.tp } })),
     sub: sub(), disc: Math.round(disc()), vc: disc() ? S.voucher : "", tax: Math.round(taxAmt()), total: Math.round(total()), status: "wait", exp: payMs(S.pay) ? Date.now() + payMs(S.pay) : 0, tb: S.type === "Dine in" ? S.tbl : "", qn: S.type === "Take away" ? nextQ() : "" };
   S.order.grand = S.order.total;
   const o = S.order;
