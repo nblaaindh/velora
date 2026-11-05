@@ -10,8 +10,7 @@ const ymd = (t) => { const d = new Date(t); return d.getFullYear() + "-" + pad(d
 const L = S.lp = { per: "week", mon: ymd(Date.now()).slice(0, 7), cart: [], date: ymd(Date.now()), pay: "Tunai" };
 
 /* ---------- data: modal, stok ---------- */
-const getCost = () => load(K_COST, {}), getOpex = () => load(K_OPEX, []), getSim = () => load(K_SIM, []), getMan = () => load(K_MAN, []), getNote = () => load(K_NOTE, false) === true;
-const noteText = (R) => "Keterangan: laporan ini memuat " + R.sim + " transaksi data simulasi untuk keperluan demo.";
+const getCost = () => load(K_COST, {}), getOpex = () => load(K_OPEX, []), getSim = () => load(K_SIM, []), getMan = () => load(K_MAN, []);
 const RATIO = { "Coffee": .30, "Signature Coffee": .35, "Non-Coffee": .35, "Tea": .30, "Pastry": .40, "Main Course": .45 };
 const defModal = (p) => Math.max(500, Math.round(p.p0 * (RATIO[p.c] || .4) / 500) * 500);   // modal awal = 30–45% harga, jadi selalu untung
 const modalOf = (id) => { const c = getCost()[id], p = P[id]; return c && c.m != null ? c.m : p ? defModal(p) : 0; };
@@ -76,11 +75,11 @@ function lapPage() {
   const days = new Date(C.y, C.mo, 0).getDate();
   const daily = Array.from({ length: days }, (_, d) => calc(new Date(C.y, C.mo - 1, d + 1).getTime(), new Date(C.y, C.mo - 1, d + 2).getTime()).rev);
   const sumW = C.W.reduce((a, w) => a + w.rev, 0), sumN = C.W.reduce((a, w) => a + w.net, 0), cocok = sumW === M.rev && sumN === M.net;
-  const sim = getSim().length, ops = getOpex().filter((x) => x.ts >= C.a && x.ts < C.b).sort((x, z) => z.ts - x.ts);
+  const ed = L.eo ? getOpex().find((x) => x.id === L.eo) : null, sim = getSim().length, ops = getOpex().filter((x) => x.ts >= C.a && x.ts < C.b).sort((x, z) => z.ts - x.ts);
   const weekView = `<div class="lscroll"><table class="ltb"><tr><th>Minggu</th><th>Trx</th><th>Terjual</th><th>Pendapatan</th><th>Modal</th><th>Biaya Op.</th><th>Untung</th></tr>${C.W.map((w) => `<tr><td>${w.l}<br><small>tgl ${w.r}</small></td><td>${w.trx}</td><td>${w.qty}</td><td>${rp(w.rev)}</td><td>${rp(w.mod)}</td><td>${rp(w.ops)}</td><td class="${w.net < 0 ? "neg" : ""}">${net(w.net)}</td></tr>`).join("")}<tr class="tot"><td>Total</td><td>${M.trx}</td><td>${M.qty}</td><td>${rp(M.rev)}</td><td>${rp(M.mod)}</td><td>${rp(M.ops)}</td><td class="${M.net < 0 ? "neg" : ""}">${net(M.net)}</td></tr></table></div>` +
     chart(C.W.map((w) => "M" + w.l.slice(-1)), [{ n: "Pendapatan", c: "#B89B72", v: C.W.map((w) => w.rev) }, { n: "Keuntungan", c: "#82C58B", v: C.W.map((w) => w.net) }]);
   const monthView = `<p class="ksub2">Periode: <b>${C.nm}</b></p><div class="lcards">${rows(M).map(([k, v]) => `<div class="lc${k === "Kerugian" ? " neg" : ""}"><small>${k}</small><b>${v}</b></div>`).join("")}</div>` + chart(daily.map((_, i) => i + 1), [{ n: "Pendapatan harian", c: "#B89B72", v: daily }]);
-  return `<section class="lap">${getNote() && M.sim ? `<div class="lsim">${noteText(M)}</div>` : ""}
+  return `<section class="lap">
   <section class="ksum"><div class="ksum-h"><small>Dashboard ${C.nm}</small><b>${rp(M.rev)}</b></div>
   <div class="ksum-g"><div><b>${M.trx}</b><small>Transaksi</small></div><div><b class="${M.net < 0 ? "neg" : ""}">${net(M.net)}</b><small>${M.net < 0 ? "Kerugian" : "Keuntungan"}</small></div><div><b>${M.qty}</b><small>Produk terjual</small></div></div>
   <h4>Produk terlaris</h4>${top.length ? `<ol class="ktop">${top.map(([n, q], i) => `<li><span><span class="rk">${i + 1}</span>${n}</span><b>${q}×</b></li>`).join("")}</ol>` : '<p class="none">Belum ada penjualan bulan ini.</p>'}</section>
@@ -88,11 +87,11 @@ function lapPage() {
   ${L.per === "week" ? weekView : monthView}
   <p class="ksub2">${cocok ? "✓ Total laporan mingguan sama dengan laporan bulanan." : "⚠ Total mingguan tidak sama dengan bulanan."} Pendapatan = jumlah terjual × harga jual; Keuntungan = pendapatan − modal − biaya operasional. Hanya pesanan lunas yang dihitung.</p>
   <div class="lbtns"><button class="kbtn ok" data-lxls>⬇ Unduh Excel</button><button class="kbtn pr" data-lpdf>⬇ Unduh PDF</button></div>
-  <section class="kset"><h3>Biaya Operasional</h3><p>Listrik, gaji, sewa, bahan habis pakai, dan lainnya.</p>
-  <input class="fld" type="date" id="lod" value="${ymd(Date.now())}" aria-label="Tanggal"><input class="fld" id="lok" placeholder="Keterangan (mis. Listrik)" maxlength="40" aria-label="Keterangan"><input class="fld" id="loj" type="text" inputmode="numeric" autocomplete="off" placeholder="Jumlah (Rp), contoh 2.000.000" aria-label="Jumlah">
-  <div class="kerr" id="lerr" role="alert"></div><button class="kbtn ok kfull" data-lopadd>Tambah Biaya</button>
-  ${ops.map((x) => `<div class="mrow"><div><b>${esc(x.ket)}</b><small>${ymd(x.ts)} · ${rp(x.jml)}</small></div><div class="mact"><button class="kbtn no sm" data-lopdel="${x.id}">Hapus</button></div></div>`).join("")}</section>
-  <section class="kset"><h3>Data Laporan</h3><label class="slbl chk"><input type="checkbox" id="lnote"${getNote() ? " checked" : ""}> Tampilkan keterangan data contoh di laporan, PDF, dan Excel</label>  <button class="kbtn ok kfull" data-lsim>Isi ulang data laporan bulan ini</button>${sim ? '<button class="kbtn no kfull" data-lsimdel>Hapus data laporan otomatis</button>' : ""}</section></section>`;
+  <section class="kset"><h3>Biaya Operasional</h3><p>${ed ? "Mengubah biaya: " + esc(ed.ket) + ". Ubah isinya lalu simpan." : "Listrik, gaji, sewa, bahan habis pakai, dan lainnya."}</p>
+  <input class="fld" type="date" id="lod" value="${ed ? ymd(ed.ts) : ymd(Date.now())}" aria-label="Tanggal"><input class="fld" id="lok" value="${ed ? esc(ed.ket) : ""}" placeholder="Keterangan (mis. Listrik)" maxlength="40" aria-label="Keterangan"><input class="fld" id="loj" value="${ed ? ed.jml.toLocaleString("id-ID") : ""}" type="text" inputmode="numeric" autocomplete="off" placeholder="Jumlah (Rp), contoh 2.000.000" aria-label="Jumlah">
+  <div class="kerr" id="lerr" role="alert"></div><button class="kbtn ok kfull" data-lopadd>${ed ? "Simpan Perubahan" : "Tambah Biaya"}</button>${ed ? '<button class="kbtn no kfull" data-lopcancel>Batal</button>' : ""}
+  ${ops.map((x) => `<div class="mrow"><div><b>${esc(x.ket)}</b><small>${ymd(x.ts)} · ${rp(x.jml)}</small></div><div class="mact"><button class="kbtn ok sm" data-lopedit="${x.id}">Ubah</button><button class="kbtn no sm" data-lopdel="${x.id}">Hapus</button></div></div>`).join("")}</section>
+  <section class="kset"><h3>Data Laporan</h3>  <button class="kbtn ok kfull" data-lsim>Isi ulang data laporan bulan ini</button>${sim ? '<button class="kbtn no kfull" data-lsimdel>Hapus data laporan otomatis</button>' : ""}</section></section>`;
 }
 
 /* ---------- halaman Stok & Modal (tab kasir) ---------- */
@@ -146,7 +145,7 @@ function sheetXml(rows, w) {
 const STYLES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="1"><numFmt numFmtId="164" formatCode="&quot;Rp&quot;#,##0;[Red]\\-&quot;Rp&quot;#,##0"/></numFmts><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE8DFD1"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="5"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/><xf numFmtId="164" fontId="1" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
 function xlsxBlob(m) {
   const C = ctxOf(m), M = C.M, n = C.W.length, H = (a) => a.map((t) => ({ v: t, s: 1 })), cur = (v, s) => ({ v, s: s || 2 });
-  const sum = [[{ v: "Laporan Penjualan VELORA Café", s: 3 }], ["Periode", C.nm], ["Dicetak", new Date().toLocaleString("id-ID")], ...(getNote() && M.sim ? [[noteText(M)]] : []), [], H(["Keterangan", "Nilai"]),
+  const sum = [[{ v: "Laporan Penjualan VELORA Café", s: 3 }], ["Periode", C.nm], ["Dicetak", new Date().toLocaleString("id-ID")], [], H(["Keterangan", "Nilai"]),
     ["Jumlah transaksi", M.trx], ["Total produk terjual", M.qty], ["Total pendapatan", cur(M.rev)], ["Total modal", cur(M.mod)], ["Total biaya operasional", cur(M.ops)],
     [{ v: M.net < 0 ? "Kerugian" : "Keuntungan bersih", s: 3 }, cur(M.net, 4)]];
   const wk = [H(["Minggu", "Tanggal", "Transaksi", "Produk Terjual", "Pendapatan", "Modal", "Biaya Operasional", "Keuntungan"]),
@@ -168,10 +167,7 @@ function xlsxBlob(m) {
   ];
   return zipStore(files);
 }
-function downloadXlsx(name, m) {
-  const a = document.createElement("a"); a.href = URL.createObjectURL(xlsxBlob(m)); a.download = name; document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(a.href), 3000);
-}
+const downloadXlsx = (name, m) => saveBlob(xlsxBlob(m), name);
 
 /* ---------- unduh PDF asli (tanpa library) ---------- */
 const HW = [278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584];
@@ -234,7 +230,7 @@ function pdfLaporan(m) {
   const GOLD = "0.72 0.61 0.45 rg", BRN = "0.35 0.27 0.22 rg", ox = getOpex().filter((x) => x.ts >= C.a && x.ts < C.b).sort((x, z) => x.ts - z.ts);
   return pdfBuild((A) => {
     A.title("Laporan Penjualan VELORA Café");
-    A.para("Periode: " + C.nm); A.para("Dicetak: " + new Date().toLocaleString("id-ID")); if (getNote() && M.sim) A.para(noteText(M));
+    A.para("Periode: " + C.nm); A.para("Dicetak: " + new Date().toLocaleString("id-ID"));
     A.h2("Ringkasan Bulanan");
     A.table([{ h: "Keterangan", w: 300 }, { h: "Nilai", w: 215, al: "r" }], rows(M));
     A.h2("Laporan Mingguan");
@@ -252,8 +248,14 @@ function pdfLaporan(m) {
   });
 }
 function saveBlob(b, name) {
-  const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = name; document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+  const anchor = () => { const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); };
+  /* HP (terutama iPhone/Chrome iOS) sering menolak unduhan langsung: pakai menu Bagikan -> "Simpan ke File" */
+  const hp = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  try {
+    const f = new File([b], name, { type: b.type });
+    if (hp && navigator.canShare && navigator.canShare({ files: [f] })) { navigator.share({ files: [f], title: name }).catch((e) => { if (!e || e.name !== "AbortError") anchor(); }); return; }
+  } catch (e) { /* lanjut ke unduhan biasa */ }
+  anchor();
 }
 const downloadPdf = (name, m) => saveBlob(pdfLaporan(m), name);
 
@@ -296,10 +298,11 @@ function isiSimulasi(m, quiet) {
       sim.push({ id: "VC-" + pad(mo) + pad(d) + "-" + k, mon: m, nm: "Pelanggan", ts, status: "done", sim: 1, items });
     }
   }
-  /* biaya operasional kafe menengah (per bulan ±Rp37 juta): ada yang mingguan, ada yang bulanan */
-  const wk = (ds, ket, jml) => ds.map((d) => [d, ket, jml]);
-  [...wk([7, 14, 21, 28], "Gaji karyawan (5 orang)", 3900000), ...wk([7, 14, 21, 28], "Sewa tempat (cicilan mingguan)", 3000000), ...wk([7, 14, 21, 28], "Gas LPG & dapur", 250000), ...wk([6, 13, 20, 27], "Kebersihan & kemasan", 500000),
-    [3, "Air PDAM", 450000], [5, "Internet & Wi-Fi", 450000], [12, "Promosi & sosial media", 1500000], [15, "Perawatan mesin kopi & AC", 1000000], [20, "Listrik PLN", 3800000]]
+  /* biaya operasional kafe menengah (per bulan Rp30,2 juta): 9 tagihan, masing-masing satu catatan per bulan.
+     Gaji: 5 karyawan × Rp2.000.000 per bulan. Ubah angka di bawah jika perlu. */
+  const GAJI = 2000000, JML = 5;
+  [[3, "Air PDAM", 450000], [5, "Internet & Wi-Fi", 450000], [8, "Gas LPG & dapur", 1000000], [10, "Sewa tempat", 10000000], [12, "Promosi & sosial media", 1500000],
+    [15, "Perawatan mesin kopi & AC", 1000000], [18, "Kebersihan & kemasan", 2000000], [20, "Listrik PLN", 3800000], [25, "Gaji karyawan (" + JML + " orang)", GAJI * JML]]
     .forEach(([d, ket, jml], i) => { if (d <= last) ops.push({ id: "s" + m + i, ts: new Date(y, mo - 1, d, 12).getTime(), ket, jml, sim: 1, mon: m }); });
   store(K_SIM, sim); store(K_OPEX, ops); _tx = null;
   if (!quiet) { toast("Data laporan bulan ini diperbarui"); render(); }
@@ -356,17 +359,20 @@ document.addEventListener("click", (e) => {
     const o = getMan(); o.push({ id: "TR-" + Date.now().toString().slice(-6), nm: "Kasir", ts, status: "done", man: 1, pay: L.pay, items, grand: items.reduce((a, i) => a + i.p * i.q, 0) });
     store(K_MAN, o); L.cart = []; toast("Transaksi tersimpan, masuk ke laporan"); return render();
   }
-  if ((b = q("[data-lopdel]"))) { store(K_OPEX, getOpex().filter((x) => x.id !== b.dataset.lopdel)); return render(); }
+  if ((b = q("[data-lopedit]"))) { L.eo = b.dataset.lopedit; render(); const f = $("#lok"); if (f && f.scrollIntoView) f.scrollIntoView({ block: "center" }); return; }
+  if (q("[data-lopcancel]")) { L.eo = null; return render(); }
+  if ((b = q("[data-lopdel]"))) { if (L.eo === b.dataset.lopdel) L.eo = null; store(K_OPEX, getOpex().filter((x) => x.id !== b.dataset.lopdel)); return render(); }
   if (q("[data-lopadd]")) {
     const ket = $("#lok").value.trim(), jml = Math.round(+String($("#loj").value).replace(/\D/g, "")), d = $("#lod").value || ymd(Date.now()), er = (t) => { $("#lerr").textContent = t; };
     if (ket.length < 2) return er("Isi keterangan minimal 2 karakter.");
     if (!(jml > 0)) return er("Jumlah harus lebih dari 0.");
-    const o = getOpex(); o.push({ id: "o" + Date.now(), ts: new Date(d + "T12:00:00").getTime(), ket, jml }); store(K_OPEX, o); toast("Biaya operasional ditambahkan"); render();
+    const o = getOpex(), ts = new Date(d + "T12:00:00").getTime(), x = L.eo ? o.find((e) => e.id === L.eo) : null;
+    if (x) { x.ts = ts; x.ket = ket; x.jml = jml; delete x.sim; L.eo = null; store(K_OPEX, o); toast("Biaya operasional diperbarui"); return render(); }
+    o.push({ id: "o" + Date.now(), ts, ket, jml }); store(K_OPEX, o); toast("Biaya operasional ditambahkan"); render();
   }
 });
 document.addEventListener("change", (e) => {
   const t = e.target, c = getCost();
-  if (t.id === "lnote") { store(K_NOTE, !!t.checked); toast(t.checked ? "Keterangan data contoh ditampilkan" : "Keterangan data contoh disembunyikan"); return render(); }
   if (t.id === "lm" && t.value) { L.mon = t.value; return render(); }
   const id = t.dataset.lcm !== undefined ? t.dataset.lcm : t.dataset.lcs; if (id === undefined) return;
   const v = Math.max(0, Math.round(+t.value || 0)); c[id] = c[id] || {};
@@ -414,10 +420,10 @@ st.textContent = `.kasir-tabs{overflow-x:auto}.kasir-tabs button{flex:none}
 document.head.appendChild(st);
 
 {   // isi data laporan otomatis untuk bulan ini & bulan lalu bila belum ada (bulan baru ikut terisi)
-  const d = new Date(), pm = new Date(d.getFullYear(), d.getMonth() - 1, 1), ms = [pm.getFullYear() + "-" + pad(pm.getMonth() + 1), L.mon], done = load("vc_sim_months", []);
-  ms.forEach((m) => { if (!done.includes(m) && !getSim().some((o) => o.mon === m)) isiSimulasi(m, true); if (!done.includes(m)) done.push(m); });
-  store("vc_sim_months", done);
-  if (!ctxOf(L.mon).M.trx && ctxOf(ms[0]).M.trx) L.mon = ms[0];   // bulan ini masih kosong -> tampilkan bulan lalu
+  const d = new Date(), pm = new Date(d.getFullYear(), d.getMonth() - 1, 1), ms = [pm.getFullYear() + "-" + pad(pm.getMonth() + 1), L.mon], done = load("vc_sim_ver", 0) === 4 ? load("vc_sim_months", []) : [];
+  ms.forEach((m) => { if (!done.includes(m)) isiSimulasi(m, true); if (!done.includes(m)) done.push(m); });
+  store("vc_sim_months", done); store("vc_sim_ver", 4);
+  if ((!ctxOf(L.mon).M.trx || d.getDate() <= 10) && ctxOf(ms[0]).M.trx) L.mon = ms[0];   // awal bulan: buka bulan lalu yang sudah lengkap   // bulan ini masih kosong -> tampilkan bulan lalu
 }
 applyMenu(); render();
 })();
